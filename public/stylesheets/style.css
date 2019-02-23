@@ -1,0 +1,35 @@
+* { -moz-box-sizing: border-box; -webkit-box-sizing: border-box; box-sizing: border-box; }
+
+
+hr {color:sienna;}
+p {
+  margin-left:20px;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+html, body {
+  height: 100%;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+body {
+  background-color:#b0c4de;
+  margin-right:5px;
+  margin-left:5px;
+  padding: 0;
+  margin: 0;
+}
+html{
+  margin:0;
+  padding:0;
+}
+
+html, body, map {
+  height: 100%;
+  font: 10pt "Helvetica Neue", Arial, Helvetica, sans-serif;
+}
+
+.leaflet-zoom-animated {
+    will-change: auto !important;
+    -webkit-backface-visibility: visible !important;
+}
