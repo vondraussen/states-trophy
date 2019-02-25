@@ -18,7 +18,10 @@ var client = mqtt.connect(config.mqtt.host+':'+config.mqtt.port, {
     username: config.mqtt.user,
     password: config.mqtt.passwd })
 
+console.log("connecting to: " + config.mqtt.host + ':' + config.mqtt.port);
+
 client.on('connect', function () {
+    console.log("subscribe to: " + config.mqtt.topic);
     client.subscribe(config.mqtt.topic, function (err) {
         if (!err) {
             console.log('connected to broker')
