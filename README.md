@@ -9,13 +9,13 @@ I'm using https://opencagedata.com/
 sign up to get your API Key. The key will be necessary in a later step.
 
 ## Docker Network Setup
-```
+``` bash
 docker network create --driver bridge reverse_proxy
 docker network create --driver bridge mqtt_net
 ```
 
 ## Start Proxy and Letsencrypt
-```
+``` bash
 # start the revers proxy
 docker run -d -p 80:80 -p 443:443 --restart always \
         --network=reverse_proxy --name nginx-proxy \
@@ -37,12 +37,13 @@ docker run -d --restart always --network=reverse_proxy \
 The companion will create the Diffie-Hallman group which will take up to 15 minutes.
 Check the container log for `Info: Diffie-Hellman group creation complete...` which indicates that it is done.
 
+> You'll need a domain to get certs from letsencrypt. I think it is not working with just an IP address.
 
 ## Start the WebAPP
 this will also create the certificates after some minutes.
 
 **Replace the placeholders with your values.**
-```
+``` bash
 # start webapp
 docker run --restart always -e ST_CONFIG_OPENCAGEDATA_KEY='<your-own-opencage-api-key>' \
     -e ST_MQTT_BROKER_URL="mqtt://mqtt_broker" \
@@ -55,15 +56,26 @@ docker run --restart always -e ST_CONFIG_OPENCAGEDATA_KEY='<your-own-opencage-ap
     -e "LETSENCRYPT_HOST=<domain>" \
     --network=reverse_proxy \
     --name states_trophy \
+    -v $PWD/states_trophy/geojson:/usr/src/app/public/geojson \
     -d mrhem/states-trophy
 
 # connect to the mqtt bridge-network
 docker network connect mqtt_net states_trophy
 ```
+Initially you have to copy the plain geojson file in to the following folder (should be created automatically by docker). The file keeps the information about the US state borders and also if a state was visited or not.
+``` bash
+cd states_trophy/geojson
+wget https://raw.githubusercontent.com/vondraussen/states-trophy/master/public/geojson/us-states_blank.geojson -O us-states.geojson
+```
+You can edit the file with a text editor in order to "activate" states manually. For example with **vim** or **vi**.
+`vim states_trophy/geojson/us-states.geojson`
+Use `/` to start a search. Type the name of a state e.q. `Montana` and hit enter. It will jump to the properties of the geojson feature (state). Change the `visited` property to `1` or `true`.
+
+> The file is like the database of your discoveries. Consider a backup!
 
 ## Mosquitto MQTT
-create a config folder
-```
+``` bash
+# create the broker config
 mkdir -p mosquitto/config
 cat >mosquitto/config/mosquitto.conf <<EOF
 allow_anonymous false
@@ -85,27 +97,26 @@ protocol websockets
 EOF
 ```
 
-create user and password (e.q. user and webapp)
-one will be used for owntracks on your phone and the otherone will be used by the webapp.
+Create user's and password's (e.q. user and webapp) for the broker. One will be used for owntracks on your phone and the other one will be used by the webapp.
 
 *firs time call with -c will create a new password file*
-```
+``` bash
 docker run -it -v $PWD/mosquitto:/mosquitto eclipse-mosquitto sh -c "mosquitto_passwd -c /mosquitto/passwd webapp"
 ```
-*here without -c*
-```
+*here without -c to append additional user*
+``` bash
 docker run -it -v $PWD/mosquitto:/mosquitto eclipse-mosquitto sh -c "mosquitto_passwd /mosquitto/passwd user"
 ```
 
 change the permissions of the mosquitto folder
-```
+``` bash
 sudo chown -R 1883 mosquitto
 ```
 
 run the broker container
 
-**Replace the placeholders with your values.**
-```
+> Replace the \<placeholders\> with your values!
+``` bash
 docker run -d -p 8883:8883 --name mqtt_broker \
     --restart always --network=mqtt_net \
     -v $PWD/mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf \
@@ -120,6 +131,6 @@ docker run -d -p 8883:8883 --name mqtt_broker \
 
 ## Tests
 Test mqtt from command line (Fedora example)
-```
+``` bash
 mosquitto_sub -d -L mqtts://<user>:<password>@<domain>:8883/<topic> --cafile /etc/pki/ca-trust/extracted/openssl/ca-bundle.trust.crt
 ```
