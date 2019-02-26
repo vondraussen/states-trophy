@@ -1,18 +1,10 @@
-var mapUrl = 'https://maps.wikimedia.org/osm-intl/{z}/{x}/{y}.png';
-var mapAttribution = 'Wikimedia maps beta | Map data &copy; <a href="http://openstreetmap.org/copyright">OpenStreetMap contributors</a>';
-
-var wikimap = L.tileLayer(mapUrl,
-    {
-        attribution: mapAttribution
-    });
-
-var baseMaps = { "wikimap": wikimap };
+var maplayer = L.tileLayer.provider('Stamen.Toner');
 
 var map = L.map('map',
     {
         center: [37.8, -96],
         zoom: 4,
-        layers: [wikimap]
+        layers: [maplayer]
     });
 
 function getStrokeColor(v) {
@@ -46,18 +38,13 @@ function style(feature) {
     return {
         weight: 2,
         opacity: 1,
-        color: 'white',
+        color: 'grey',
         dashArray: '3',
         fillOpacity: getFillOpacity(feature.properties),
         fillColor: getFillColor(feature.properties)
     };
 }
 
-var statesData;
-$.getJSON("geojson/us-states.geojson", function (json) {
-    statesData = json;
-}).done(function (data) {
-    var geojson = L.geoJson(data, {
-        style: style,
-    }).addTo(map);
+$.getJSON("geojson/us-states.geojson", function () {}).done(function (data) {
+    L.geoJson(data, {style: style}).addTo(map);
 });
