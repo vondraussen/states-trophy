@@ -1,6 +1,6 @@
 # States Trophy Docker Container Setup
 Provides a dynamic map of your discoveries (green and current state is red). 
-![asd](https://imgur.com/f3zWbwr.png)
+![Stamen.Toner](https://imgur.com/Rojcvnq.png)
 
 You can use it together with [owntracks](https://owntracks.org) for iOS or Android.
 
