@@ -1,9 +1,14 @@
 var express = require('express');
 var router = express.Router();
 
-/* GET home page. */
+// states view
 router.get('/', function(req, res, next) {
-  res.render('index', { title: 'States-Trophy' });
+  res.render('us_states', { title: 'States-Trophy' });
+});
+
+// country view
+router.get('/countries', function(req, res, next) {
+  res.render('countries', { title: 'Country-Trophy' });
 });
 
 module.exports = router;

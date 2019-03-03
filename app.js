@@ -7,6 +7,11 @@ var logger = require('morgan');
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 
+var mqtt_client = require('./mqtt_client');
+var trophy = require('./trophy');
+
+mqtt_client.on('position', trophy.onPosition);
+
 var app = express();
 
 // view engine setup

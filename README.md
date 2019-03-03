@@ -1,12 +1,9 @@
 # States Trophy Docker Container Setup
-Provides a dynamic map of your discoveries (green and current state is red). 
+Provides a dynamic map of your discoveries (green and current state is red). Includes a list of all your discovered countries too. Just browse to http://example.com/countries
+
 ![Stamen.Toner](https://imgur.com/Rojcvnq.png)
 
 You can use it together with [owntracks](https://owntracks.org) for iOS or Android.
-
-## Register for GEOIP Service
-I'm using https://opencagedata.com/
-sign up to get your API Key. The key will be necessary in a later step.
 
 ## Docker Network Setup
 ``` bash
@@ -45,7 +42,7 @@ this will also create the certificates after some minutes.
 **Replace the placeholders with your values.**
 ``` bash
 # start webapp
-docker run --restart always -e ST_CONFIG_OPENCAGEDATA_KEY='<your-own-opencage-api-key>' \
+docker run --restart always -e 
     -e ST_MQTT_BROKER_URL="mqtt://mqtt_broker" \
     -e ST_MQTT_BROKER_PORT='1883' \
     -e ST_MQTT_BROKER_USER='<user>' \
@@ -66,12 +63,13 @@ Initially you have to copy the plain geojson file in to the following folder (sh
 ``` bash
 cd states_trophy/geojson
 wget https://raw.githubusercontent.com/vondraussen/states-trophy/master/public/geojson/us-states_blank.geojson -O us-states.geojson
+wget https://raw.githubusercontent.com/vondraussen/states-trophy/master/public/geojson/countries_blank.geojson -O countries.geojson
 ```
 You can edit the file with a text editor in order to "activate" states manually. For example with **vim** or **vi**.
 `vim states_trophy/geojson/us-states.geojson`
 Use `/` to start a search. Type the name of a state e.q. `Montana` and hit enter. It will jump to the properties of the geojson feature (state). Change the `visited` property to `1` or `true`.
 
-> The file is like the database of your discoveries. Consider a backup!
+> The files are like the database of your discoveries. Consider a backup!
 
 ## Mosquitto MQTT
 ``` bash
