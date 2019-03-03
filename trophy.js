@@ -1,89 +1,88 @@
-
 var inside = require('point-in-polygon');
-
 var fs = require('fs');
-var request = require('request');
 
 var us_states_file = 'public/geojson/us-states.geojson';
 var countries_file = 'public/geojson/countries.geojson';
-var geojson;
 
-var getState = function (location) {
-  var msg = {
-    lon: location.lon,
-    lat: location.lat,
-    apiurl: "https://api.opencagedata.com/geocode/v1/json",
-    apikey: config.opencage.apikey };
+var updateCountry = function (loc) {
+  countries = JSON.parse(fs.readFileSync(countries_file, 'utf8'));
 
-  msg.url = msg.apiurl + '?key=' + msg.apikey +
-    '&q=' + msg.lat + '%2C' + msg.lon;
+  // for each polygon of a country we have to check if our
+  // position is in one of those polygons
+  countries.features.forEach(country => {
+    let poltype = country.geometry.type;
+    let polygons = country.geometry.coordinates;
+    let polyArr;
 
-  // geojson = JSON.parse(fs.readFileSync(countries_file, 'utf8'));
-  // // reset current highlighted state
-  // geojson.features.forEach(element => {
-  //   if (element.properties.active_stay) {
-  //     element.properties.active_stay = false;
-  //   }
-  // });
-  // for (const country in object) {
-  //   if (object.hasOwnProperty(key)) {
-  //     const element = object[key];
-      
-  //   }
-  // }
-
-  return new Promise(resolve => {
-    request(msg.url, {
-      json: true
-    }, (err, res, body) => {
-      if (err) {
-        return console.log(err);
-      }
-      if (body.results[0]) {
-        console.log(body.results[0].components);
-        resolve(body.results[0].components.state);
+    for (let i = 0; i < polygons.length; i++) {
+      if (poltype === 'MultiPolygon') {
+        polyArr = polygons[i][0];
       } else {
-        console.log(body);
-        resolve('UNKNOWN');
+        polyArr = polygons[0];
       }
-    });
+
+      if (inside([loc.lon, loc.lat], polyArr)) {
+        console.log('You`re in ' + country.properties.ADMIN);
+        if (!country.properties.visited || !country.properties.active_stay) {
+          country.properties.visited = 1;
+          country.properties.active_stay = true;
+
+          // reset current highlighted country
+          countries.features.forEach(countr => {
+            if (countr.properties.active_stay &&
+                countr.properties.ADMIN !== country.properties.ADMIN) {
+              countr.properties.active_stay = false;
+            }
+          });
+
+          fs.writeFileSync(countries_file, JSON.stringify(countries));
+        }
+      }
+    }
   });
 }
 
-async function onPosition(location) {
-  var state;
-  var newEncounter;
+var updateUsState = function (loc) {
+  usStates = JSON.parse(fs.readFileSync(us_states_file, 'utf8'));
 
-  try {
-    state = await getState(location);
-  } catch (e) {
-    state = null;
-    console.log('geoip api error');
-  }
-  geojson = JSON.parse(fs.readFileSync(us_states_file, 'utf8'));
+  // for each polygon of a state we have to check if our
+  // position is in one of those polygons
+  usStates.features.forEach(state => {
+    let poltype = state.geometry.type;
+    let polygons = state.geometry.coordinates;
+    let polyArr;
 
-  // reset current highlighted state
-  geojson.features.forEach(element => {
-    if (element.properties.active_stay) {
-      element.properties.active_stay = false;
-    }
-  });
+    for (let i = 0; i < polygons.length; i++) {
+      if (poltype === 'MultiPolygon') {
+        polyArr = polygons[i][0];
+      } else {
+        polyArr = polygons[0];
+      }
 
-  // set state
-  geojson.features.forEach(element => {
-    if (state == element.properties.name) {
-      console.log("You're in " + state)
-      element.properties.active_stay = true;
-      if (element.properties.visited != true) {
-        console.log("That's a new one!")
-        newEncounter = true;
-        element.properties.visited = true;
+      if (inside([loc.lon, loc.lat], polyArr)) {
+        console.log('You`re in ' + state.properties.name);
+        if(!state.properties.visited || !state.properties.active_stay) {
+          state.properties.visited = 1;
+          state.properties.active_stay = true;
+
+          // reset current highlighted state
+          usStates.features.forEach(usState => {
+            if (usState.properties.active_stay &&
+                usState.properties.name != state.properties.name) {
+              usState.properties.active_stay = false;
+            }
+          });
+
+          fs.writeFileSync(us_states_file, JSON.stringify(usStates));
+        }
       }
     }
   });
-  if (newEncounter) {
-    fs.writeFileSync(geojson_file, JSON.stringify(geojson));
-  }
+}
+
+async function onPosition(loc) {
+  updateUsState(loc);
+  updateCountry(loc);
 }
 
 module.exports.onPosition = onPosition;
