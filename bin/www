@@ -3,15 +3,8 @@
 /**
  * Module dependencies.
  */
-
 var app = require('../app');
-var mqtt_client = require('../mqtt_client');
-var fs = require('fs');
 var http = require('http');
-var request = require('request');
-
-var geojson_file = 'public/geojson/us-states.geojson';
-var geojson;
 
 try {
   config = require('../config');
@@ -47,8 +40,6 @@ var server = http.createServer(app);
 server.listen(port);
 server.on('error', onError);
 server.on('listening', onListening);
-
-mqtt_client.on('position', onPosition);
 
 /**
  * Normalize a port into a number, string, or false.
@@ -107,62 +98,4 @@ function onListening() {
   var bind = typeof addr === 'string'
     ? 'pipe ' + addr
     : 'port ' + addr.port;
-}
-
-async function onPosition(location) {
-  var state;
-  var newEncounter;
-
-  try {
-    state = await getState(location);
-  } catch(e) {
-    state = null;
-    console.log('geoip api error');
-  }
-  geojson = JSON.parse(fs.readFileSync(geojson_file, 'utf8'));
-  
-  // reset current highlighted state
-  geojson.features.forEach(element => {
-    if (element.properties.active_stay) {
-      element.properties.active_stay = false;
-    }
-  });
-  
-  // set state
-  geojson.features.forEach(element => {
-    if (state == element.properties.name) {
-      console.log("You're in " + state)
-      element.properties.active_stay = true;
-      if (element.properties.visited != true) {
-        console.log("That's a new one!")
-        newEncounter = true;
-        element.properties.visited = true;
-      }     
-    }
-  });
-  if (newEncounter) {
-    fs.writeFileSync(geojson_file, JSON.stringify(geojson));
-  }
-}
-
-var getState = function(location) {
-  var msg = {
-    lon: location.lon,
-    lat: location.lat,
-    apiurl: "https://api.opencagedata.com/geocode/v1/json",
-    apikey: config.opencage.apikey };
-
-  msg.url = msg.apiurl + '?key=' + msg.apikey +
-    '&q=' + msg.lat + '%2C' + msg.lon;
-
-    return new Promise(resolve => {
-      request(msg.url, { json: true }, (err, res, body) => {
-        if (err) { return console.log(err); }
-        if (body.results[0]) {
-          resolve(body.results[0].components.state);
-        } else {
-          console.log(body);
-          resolve('UNKNOWN');
-        }
-  });});
 }
